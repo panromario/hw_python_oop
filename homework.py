@@ -29,11 +29,7 @@ class Record:
         self.date = dt.date.today()
 
         if date is not None:
-            try:
-                self.date = dt.datetime.strptime(date, DATE_FORMAT).date()
-            except ValueError:
-                print("Incorrect Format date")
-                exit()
+            self.date = dt.datetime.strptime(date, DATE_FORMAT).date()
 
 
 class CashCalculator(Calculator):
@@ -52,11 +48,7 @@ class CashCalculator(Calculator):
         }
 
         if currency not in currencies:
-            try:
-                raise ValueError("Currency not found")
-            except ValueError as e:
-                print(e)
-                exit()
+            raise ValueError
 
         currency_name, currency_rate = currencies[currency]
 
