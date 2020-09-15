@@ -1,6 +1,6 @@
 import datetime as dt
 
-dateFormat = '%d.%m.%Y'
+DATE_FORMAT = '%d.%m.%Y'
 
 
 class Calculator:
@@ -12,7 +12,7 @@ class Calculator:
         self.records.append(record)
 
     def get_today_stats(self):
-        records_list = list(filter(lambda r: r.date == dt.datetime.now().date(), self.records))
+        records_list = list(filter(lambda r: r.date == dt.date.today(), self.records))
         return sum(r.amount for r in records_list)
 
     def get_week_stats(self):
@@ -23,14 +23,14 @@ class Calculator:
 
 
 class Record:
-    def __init__(self, amount, comment='', date=''):
+    def __init__(self, amount, comment, date=None):
         self.amount = amount
         self.comment = comment
-        self.date = dt.datetime.now().date()
+        self.date = dt.date.today()
 
-        if date != '':
+        if date is not None:
             try:
-                self.date = dt.datetime.strptime(date, dateFormat).date()
+                self.date = dt.datetime.strptime(date, DATE_FORMAT).date()
             except ValueError:
                 print("Incorrect Format date")
                 exit()
@@ -39,31 +39,38 @@ class Record:
 class CashCalculator(Calculator):
     USD_RATE = 74.86
     EURO_RATE = 89.08
+    RUB_RATE = 1
 
     def get_today_cash_remained(self, currency):
         cash_remained = self.limit - self.get_today_stats()
         result = 'Денег нет, держись'
 
-        if currency == 'usd':
-            cash = round(abs(cash_remained) / self.USD_RATE, 2)
-            print_cache = f'{cash} USD'
-        elif currency == 'eur':
-            cash = round(abs(cash_remained) / self.EURO_RATE, 2)
-            print_cache = f'{cash} Euro'
+        currencies = {
+            'eur': ('Euro', self.EURO_RATE),
+            'usd': ('USD', self.USD_RATE),
+            'rub': ('руб', self.RUB_RATE),
+        }
+
+        if currency not in currencies:
+            try:
+                raise ValueError("Currency not found")
+            except ValueError as e:
+                print(e)
+                exit()
+
+        currency_name, currency_rate = currencies[currency]
+
+        if currency_rate == 1:
+            result_cache = abs(cash_remained)
         else:
-            cash = abs(cash_remained)
-            print_cache = f'{cash} руб'
+            result_cache = round(abs(cash_remained) / currency_rate, 2)
 
         if cash_remained > 0:
-            result = f'На сегодня осталось {print_cache}'
+            result = f'На сегодня осталось {result_cache} {currency_name}'
         elif cash_remained < 0:
-            result += f': твой долг - {print_cache}'
+            result += f': твой долг - {result_cache} {currency_name}'
 
         return result
-
-    def get_week_stats(self):
-        cash = super().get_week_stats()
-        return f'За последние 7 дней потрачено {cash} руб'
 
 
 class CaloriesCalculator(Calculator):
@@ -77,7 +84,3 @@ class CaloriesCalculator(Calculator):
             result = 'Хватит есть!'
 
         return result
-
-    def get_week_stats(self):
-        calories = super().get_week_stats()
-        return f'За последние 7 дней получено {calories} калорий'
